@@ -20,7 +20,7 @@ Agent skills for GitHub engineering workflows, built for Claude Code, Google Ant
         v
 2. Author or update PR (gh-pr Step 0 state router)
    +-- Mode 1 (NO_OPEN_PR): Branch -> full gates -> DCO commits (-s) -> gh pr create (#2051)
-   +-- Mode 2 (OPEN_PR update): Targeted tests -> git commit -s -> check @{u}..HEAD & behind -> git push -> surgical gh pr edit if metadata changed
+   +-- Mode 2 (OPEN_PR update): Targeted tests -> git commit -s -> check ${UPSTREAM}..HEAD & behind -> git push -> surgical gh pr edit if metadata changed
         |
         v
 3. Coordinate and review (gh-review)

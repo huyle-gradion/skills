@@ -21,7 +21,7 @@ Execute the reviewer and merge-coordinator workflow across four stages. Start by
    ```
    - **Fast-forward to Stage 3 on re-review.** Extract the commit SHA of the last review that requested changes or posted structured findings (`- F<N> · P<1|2|3>`):
      ```bash
-     jq -r '[.reviews[] | select(.state == "CHANGES_REQUESTED" or (.body | test("(^|\n)- F[0-9]+ · P[123]")))][-1].commit.oid // empty'
+     gh pr view <pr> --json reviews --jq '[.reviews[] | select(.state == "CHANGES_REQUESTED" or (.body | test("(^|\n)- F[0-9]+ · P[123]")))][-1].commit.oid // empty'
      ```
      If `<prev-reviewed-sha>` is non-empty and differs from `headRefOid`, jump directly to **Stage 3** to diff `<prev-reviewed-sha>..<headRefOid>`.
    - **Verify policy compliance on initial review.** Check Conventional Commit title, `Closes #<N>` or `Refs #<N>`, `FS:` line, `area:*` label matching touched directory prefixes, DCO sign-off on commits, and diff size budget.

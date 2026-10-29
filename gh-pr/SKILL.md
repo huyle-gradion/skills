@@ -73,7 +73,7 @@ Route to one mode based on the probe output and operator intent:
 Use this fast path when an open PR already exists on the current branch. Do not re-run `gh-issue` or `gh pr create`.
 
 1. **Inspect incremental changes, remote tracking state, and cumulative diff budget.**
-   - Fetch the remote PR branch and check working-tree changes, staged files, upstream divergence (`ahead X, behind Y`), and cumulative diff size against the merge-base (so both committed and uncommitted changes are counted):
+   - Fetch the remote PR branch, mark any new untracked files with intent-to-add (`git add -N <new-files>`) so they are included in diff stats, and check working-tree changes, upstream divergence (`ahead X, behind Y`), and cumulative diff size against the merge-base:
      ```bash
      git fetch origin
      git status -sb
