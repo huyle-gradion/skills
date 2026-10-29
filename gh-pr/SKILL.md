@@ -18,7 +18,7 @@ Run this single probe before choosing a mode:
 ```bash
 git status -sb
 git branch --show-current
-gh pr view --json number,state,title,body,labels,baseRefName,headRefName,headRefOid,reviewDecision,mergeStateStatus,url 2>/dev/null || echo "NO_OPEN_PR"
+gh pr view --json number,state,title,body,labels,baseRefName,headRefName,headRefOid,reviewDecision,reviews,mergeStateStatus,url 2>/dev/null || echo "NO_OPEN_PR"
 ```
 
 Route to one mode based on the probe output and operator intent:
@@ -92,22 +92,22 @@ Use this fast path when an open PR already exists on the current branch. Do not 
      ```bash
      git commit -s -m "<type>(<scope>): <concise description of the update>"
      ```
-   - Resolve the remote tracking reference and confirm every unpushed local commit carries `Signed-off-by:` without rewriting already-pushed commits:
+   - Resolve the remote tracking reference and check whether the local branch is behind `${UPSTREAM}` or has unpushed commits missing `Signed-off-by:` without rewriting already-pushed commits:
      ```bash
      UPSTREAM=$(git rev-parse --abbrev-ref @{u} 2>/dev/null || echo "origin/$(git branch --show-current)")
+     git rev-list --left-right --count "${UPSTREAM}...HEAD"
      git log "${UPSTREAM}..HEAD" --format='%h %B'
      ```
-     If any unpushed commit in `"${UPSTREAM}..HEAD"` lacks `Signed-off-by:`, run `git rebase --signoff "${UPSTREAM}"`.
-   - If `git status -sb` shows the local branch is `behind` its upstream tracking branch (for example, a teammate or bot pushed to the PR branch), rebase local unpushed commits onto the upstream branch (`git pull --rebase origin "$(git branch --show-current)"`) before pushing.
+     If the branch is behind `${UPSTREAM}` (left count `> 0`, for example after a teammate or bot pushed to the PR branch) or any unpushed commit in `"${UPSTREAM}..HEAD"` lacks `Signed-off-by:`, run `git rebase --signoff "${UPSTREAM}"` once so unpushed commits are both rebased onto the remote tip and DCO-signed.
    - Push directly to the open PR branch:
      ```bash
-     git push
+     git push -u origin HEAD
      ```
 
 4. **Reconcile PR body and labels only when metadata changed.**
    - Compare the newly committed changes against the existing PR `title`, `body`, and `labels` from Step 0:
      - **No metadata drift.** If the existing `## Summary`, `FS:` line, `## Acceptance criteria`, `## Tests`, and `area:*` labels already cover the change, skip `gh pr edit`. The push completes the update.
-     - **Labels or body sections changed.** Update any new `area:*` label and any modified PR body sections (`## Summary`, `## Measured`, `FS:`, or `## Tests`) in a single `gh pr edit` call using the incremental update rules in [references/pr-templates-and-replies.md](./references/pr-templates-and-replies.md):
+     - **Labels or body sections changed.** Update any new `area:*` label and any modified PR body sections (`## Summary`, `## Measured`, `FS:`, `## Acceptance criteria`, or `## Tests`) in a single `gh pr edit` call using the incremental update rules in [references/pr-templates-and-replies.md](./references/pr-templates-and-replies.md):
        ```bash
        gh pr edit <pr> --add-label "area:<new-area>" --body-file <tmp-updated-pr-body.md>
        ```
@@ -121,8 +121,8 @@ When a reviewer posts findings (`F1 · P1`, `F2 · P2`) or submits `CHANGES_REQU
 
 1. **Fetch review summaries and unresolved inline comment threads in parallel.**
    ```bash
-   gh api repos/{owner}/{repo}/pulls/{pr}/reviews --jq '.[] | {id, user: .user.login, state, commit_id, body}'
-   gh api repos/{owner}/{repo}/pulls/{pr}/comments --jq '.[] | {id, in_reply_to_id, path, line, user: .user.login, body}'
+   gh api --paginate repos/{owner}/{repo}/pulls/{pr}/reviews --jq '.[] | {id, user: .user.login, state, commit_id, body}'
+   gh api --paginate repos/{owner}/{repo}/pulls/{pr}/comments --jq '.[] | {id, in_reply_to_id, path, line, user: .user.login, body}'
    ```
    - Identify root inline comments (`in_reply_to_id == null`) that do not yet have a `Fixed in <sha>.` reply.
 

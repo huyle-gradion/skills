@@ -67,17 +67,19 @@ When pushing new commits to an existing open PR in Mode 2, decide whether `gh pr
 | New test file or changed test pass count | Update the matching line in `## Tests` via `gh pr edit <pr> --body-file <file>`. |
 | Layout, latency, or bundle metric changed | Update the `After` column in `## Measured`. |
 | Functional spec requirement added or modified | Update the `FS:` declaration line. |
-| Files in a new top-level area prefix modified | Run `gh pr edit <pr> --add-label "area:<area>"`. |
+| Acceptance criteria status or items updated | Update the matching checklist items in `## Acceptance criteria`. |
+| Files in a new top-level area prefix modified | Run `gh pr edit <pr> --add-label "area:<area>"` (combine with `--body-file` when body sections also changed). |
 
 To patch the PR body safely without losing existing sections or colliding across concurrent sessions, dump the current body to a unique scratch file, edit the affected section in place, and pass it back to `gh pr edit`:
 
 ```bash
-TMP_BODY=$(mktemp /tmp/pr-body.XXXXXX.md)
+TMP_BODY=$(mktemp /tmp/pr-body.XXXXXX)
 gh pr view <pr> --json body --jq '.body' > "$TMP_BODY"
-# Edit "$TMP_BODY" in place to update ## Summary, ## Measured, FS:, or ## Tests
-gh pr edit <pr> --body-file "$TMP_BODY"
+# Edit "$TMP_BODY" in place to update ## Summary, ## Measured, FS:, ## Acceptance criteria, or ## Tests
+gh pr edit <pr> --add-label "area:<new-area>" --body-file "$TMP_BODY"
 rm -f "$TMP_BODY"
 ```
+(Omit `--add-label` when labels are unchanged.)
 
 ---
 

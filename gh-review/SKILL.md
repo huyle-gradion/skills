@@ -15,15 +15,13 @@ Execute the reviewer and merge-coordinator workflow across four stages. Start by
 
 ### Stage 1. Triage and sibling PR conflict check
 
-1. **Inspect the PR and its review history first.**
+1. **Inspect the PR and its review history in a single call.**
    ```bash
    gh pr view <pr> --json number,title,author,baseRefName,headRefName,headRefOid,mergeStateStatus,labels,body,files,commits,reviews,comments
    ```
-   - **Fast-forward to Stage 3 on re-review.** Extract the commit SHA of the last review that requested changes or posted structured findings (`- F<N> · P<1|2|3>`):
-     ```bash
-     gh pr view <pr> --json reviews --jq '[.reviews[] | select(.state == "CHANGES_REQUESTED" or (.body | test("(^|\n)- F[0-9]+ · P[123]")))][-1].commit.oid // empty'
-     ```
-     If `<prev-reviewed-sha>` is non-empty and differs from `headRefOid`, jump directly to **Stage 3** to diff `<prev-reviewed-sha>..<headRefOid>`.
+   - **Fast-forward to Stage 3 or Stage 4 on re-review.** From the `reviews` array already returned above, inspect the last review that recorded findings, requested changes, or approved (`jq '[.reviews[] | select(.state == "CHANGES_REQUESTED" or .state == "APPROVED" or (.body | test("(^|\n)(- F[0-9]+ · P[123]|Approved\\.)")))][-1] | {state, oid: .commit.oid, body}'`):
+     - If that last review has `oid == headRefOid` and is an approval (`state == "APPROVED"` or `body` starts with `Approved.`), jump directly to **Stage 4** (pre-merge `## Coordinator record`).
+     - If that last review has a non-empty full 40-character `oid` (`<prev-reviewed-sha>`) that differs from `headRefOid`, jump directly to **Stage 3** to diff `<prev-reviewed-sha>..<headRefOid>`.
    - **Verify policy compliance on initial review.** Check Conventional Commit title, `Closes #<N>` or `Refs #<N>`, `FS:` line, `area:*` label matching touched directory prefixes, DCO sign-off on commits, and diff size budget.
 
 2. **Coordinate overlapping sibling PR conflicts on initial review.**
@@ -51,12 +49,11 @@ Execute the reviewer and merge-coordinator workflow across four stages. Start by
 
 3. **Compose inline comments and the review summary.**
    - Format every inline comment using the 5-part structure in [references/review-and-coordinator-formats.md](./references/review-and-coordinator-formats.md):
-     1. Header: `**<Bug|Suggestion> · <category> · <verified|not verified>** <One-sentence defect statement.>`
-     2. Trigger metadata: `` `<symbol>` · fires when <condition> · <N> call site(s) ``
-     3. `**Problem**`: `<file:line>`, fenced code snippet, and 1-2 sentence explanation.
-     4. `**How it fails**`: numbered step-by-step walkthrough ending in `Result: <user-visible failure>`.
-     5. `**Fix**`: target behavior sentence, code change sentence, and minimal `diff` block.
-     6. `**Sibling sites**`: bullet list of related locations (`- <path:line> · <same bug | checked, fine> · <reason>`).
+     1. **Header and trigger metadata**: `**<Bug|Suggestion> · <category> · <verified|not verified>** <One-sentence defect statement.>` followed on the next line by `` `<symbol>` · fires when <condition> · <N> call site(s) ``.
+     2. `**Problem**`: `<file:line>`, fenced code snippet, and 1-2 sentence explanation.
+     3. `**How it fails**`: numbered step-by-step walkthrough ending in `Result: <user-visible failure>`.
+     4. `**Fix**`: target behavior sentence, code change sentence, and minimal `diff` block.
+     5. `**Sibling sites**`: bullet list of related locations (`- <path:line> · <same bug | checked, fine> · <reason>`).
    - Format the top-level review `body` as a one-line-per-finding index:
      ```markdown
      - F1 · P1 · `path/to/file.tsx:120` · <One-sentence defect statement>.
@@ -77,15 +74,16 @@ Execute the reviewer and merge-coordinator workflow across four stages. Start by
 When the author pushes new commits (via `gh-pr` Mode 2 or Mode 3) or replies inline (`Fixed in <sha>...`):
 
 1. **Inspect only the incremental diff since `<prev-reviewed-sha>` from Stage 1.**
-   - Fetch both `<prev-reviewed-sha>` and the PR branch head (in case the branch was rebased since the prior review) and diff the range:
+   - Fetch `origin/main`, the full 40-character `<prev-reviewed-sha>` (`commit.oid`), and `<headRefName>`, then diff the incremental changes:
      ```bash
-     git fetch origin <prev-reviewed-sha> <headRefName>
+     git fetch origin main <prev-reviewed-sha> <headRefName>
      git diff --stat <prev-reviewed-sha>..<current-head-sha>
      git diff <prev-reviewed-sha>..<current-head-sha>
      ```
+     If `<prev-reviewed-sha>` is not an ancestor of `<current-head-sha>` because the branch was rebased onto a newer `origin/main` (check with `git merge-base --is-ancestor <prev-reviewed-sha> <current-head-sha>`), also run `git range-diff origin/main <prev-reviewed-sha> <current-head-sha>` so upstream `main` commits are separated from the author's changes.
 2. **Audit each fix or incremental update for secondary regressions and new sibling overlaps.**
    - Verify that each change resolves the reported issue or delivers the incremental update without introducing a new edge case (such as clipping a child element inside a scroll container, breaking edit mode layout, or skipping unmount cleanup).
-   - Compare `git diff --name-only <prev-reviewed-sha>..<current-head-sha>` against `git diff --name-only origin/main...<prev-reviewed-sha>`. If the incremental commits touch files that were not in the previously reviewed PR diff, run `gh pr list --state open --json number,title,author,files` to check for newly introduced sibling PR overlaps.
+   - Compare `git diff --name-only origin/main...<current-head-sha>` against `git diff --name-only origin/main...<prev-reviewed-sha>`. If the current PR diff against `origin/main` touches files that were not in the previously reviewed PR diff, run `gh pr list --state open --json number,title,author,files` to check for newly introduced sibling PR overlaps.
 3. **Verify test discrimination via revert testing.**
    - In a clean worktree or scratch copy, revert each production fix hunk while keeping the new test, then run the targeted test file. Confirm that each new test fails when its production fix is reverted and passes when restored.
 4. **Route based on remaining findings.**
