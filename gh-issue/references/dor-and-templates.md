@@ -1,23 +1,23 @@
-# Definition of Ready (DoR) and Issue Templates
+# Definition of Ready (DoR) and issue templates
 
 ## Definition of Ready checklist
 
 An issue is ready for implementation when all applicable checks pass:
 
-1. **Template sections present**: All required `### <Heading>` sections from `.github/ISSUE_TEMPLATE/{bug,feature,backlog-item}.yml` are present and non-empty.
-2. **Deduplicated**: Open and closed issues were searched; related or prior issues are cited under `Dupes` in `Dev notes`.
-3. **Code claims verified**: Every file path, line number, and function name in `Dev notes` was verified with `rg` / `read` in the repository and placed inside `<details><summary>Dev notes (code-read, not run)</summary>`.
-4. **Repro or state-complete AC**:
+1. **Template sections present.** All required `### <Heading>` sections from `.github/ISSUE_TEMPLATE/{bug,feature,backlog-item}.yml` are present and non-empty.
+2. **Deduplicated.** Open and closed issues were searched; related or prior issues are cited under `Dupes` in `Dev notes`.
+3. **Code claims verified.** Every file path, line number, and function name in `Dev notes` was verified with `rg` or `read` in the repository and placed inside `<details><summary>Dev notes (code-read, not run)</summary>`.
+4. **Repro or state-complete acceptance criteria.**
    - Bugs have numbered steps from a concrete starting screen to the observed failure, plus `Expected:` and `Actual:`.
    - Features and backlog items cover `Happy path`, `Error / failure`, `Empty / zero state`, `Edge inputs`, and `Platform behavior`.
-5. **Edge states explicit**: Long text, empty state, rapid/concurrent actions, permission boundaries, and viewport constraints are stated rather than left implicit.
-6. **Sizing and priority (when using GitHub Projects)**:
+5. **Edge states explicit.** Long text, empty state, rapid or concurrent actions, permission boundaries, and viewport constraints are stated rather than left implicit.
+6. **Sizing and priority (when using GitHub Projects).**
    - `Size`: `XS` (< 2h), `S` (0.5-1d), `M` (2-3d), `L` (4-5d), `XL` (> 1w, must be split before sprint entry).
    - `Score`: `User value (1-5) + (Exposure (1-5) * Severity (1-5)) + Roadmap fit (1-5) - Effort risk (1-5)`.
    - `Priority`: `Urgent` (>= 25), `High` (18-24), `Medium` (10-17), `Low` (< 10).
-7. **Platform label**: Exactly one `platform:web`, `platform:mobile-app`, or `platform:all` label when the repo uses platform labels.
-8. **Open question marker**: `_Open question: none._` (or explicit blocking questions).
-9. **Functional spec impact**: `### FS impact` block naming the spec area and requirement IDs (`ADDED`, `MODIFIED`, `REMOVED`, `DOCUMENT`), `none (<reason>)`, or `area not yet specified (<PREFIX>)`.
+7. **Platform label.** Exactly one `platform:web`, `platform:mobile-app`, or `platform:all` label when the repo uses platform labels.
+8. **Open question marker.** `_Open question: none._` (or explicit blocking questions).
+9. **Functional spec impact.** `### FS impact` block naming the spec area and requirement IDs (`ADDED`, `MODIFIED`, `REMOVED`, `DOCUMENT`), `none (<reason>)`, or `area not yet specified (<PREFIX>)`.
 
 ---
 

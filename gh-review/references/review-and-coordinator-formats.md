@@ -1,4 +1,4 @@
-# Review, Conflict Coordination, Approval, and Coordinator Record Formats
+# Review, conflict coordination, approval, and coordinator record formats
 
 ## 1. Sibling PR conflict and merge-order comment (`@`-mention)
 
@@ -29,7 +29,7 @@ The review body lists each inline finding as a single-line index entry:
 
 Attach to the exact file `path` and `line` in the PR diff:
 
-```markdown
+````markdown
 **<Bug | Suggestion> · <layout | interaction | scroll | ui-state | auth | data | concurrency | api> · <verified | not verified>** <One-sentence summary of the defect.>
 
 `<symbol or CSS selector>` · fires when <trigger condition> · <N> call site(s)
@@ -58,7 +58,7 @@ Attach to the exact file `path` and `line` in the PR diff:
 **Sibling sites**
 - `<path/to/sibling1.tsx:line>` · <same bug | checked, fine> · <one-line reason>
 - `<path/to/sibling2.tsx:line>` · <same bug | checked, fine> · <one-line reason>
-```
+````
 
 ### JSON payload format for `gh api repos/{owner}/{repo}/pulls/{pr}/reviews`
 
