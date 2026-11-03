@@ -1,11 +1,11 @@
 ---
 name: gh-issue
-description: Ensure every task starts with a GitHub issue. Checks the current branch or searches open and closed issues first; if none exists, investigates the codebase for verified root-cause notes and creates or updates a Definition-of-Ready (DoR) compliant issue. Use before starting any feature, bug fix, or chore, or when asked to check, file, groom, or audit a GitHub issue.
+description: Resolve or create the GitHub issue for active work before opening a PR. Searches the current branch, open issues, and closed issues for an existing match; if found, returns its issue number to cite in the PR; if not found, creates a Definition-of-Ready (DoR) compliant issue from the verified code changes. Use after starting or completing work on a feature, bug fix, or chore, or when asked to check, file, groom, or audit a GitHub issue.
 ---
 
-# GitHub issue gate (`gh-issue`)
+# GitHub issue resolution (`gh-issue`)
 
-Every piece of engineering work starts with a GitHub issue. Check whether the active branch or repository already has a matching issue before creating a new one. If none exists, investigate the codebase read-only and create a Definition-of-Ready (DoR) compliant issue.
+Start by working on the task in the repository. Before opening a pull request, look up whether a matching GitHub issue already exists. If an issue exists, use its `#<N>` when creating the PR. If no issue exists, create a Definition-of-Ready (DoR) compliant issue grounded in the verified code and return `#<N>` for the PR.
 
 ## Steps
 
@@ -16,7 +16,7 @@ Every piece of engineering work starts with a GitHub issue. Check whether the ac
      ```bash
      gh issue view <N> --json number,title,state,labels,body,comments,url
      ```
-   - If the operator only needs the linked issue confirmed for an in-flight branch, return `#<N>` immediately once verified. Otherwise, audit `#<N>` against the DoR checklist in [references/dor-and-templates.md](./references/dor-and-templates.md) and update any missing sections or labels via `gh issue edit <N>`.
+   - If the operator only needs the linked issue confirmed for an in-flight branch, return `#<N>` immediately once verified so `gh-pr` can mention it (`Closes #<N>` or `Refs #<N>`). Otherwise, audit `#<N>` against the DoR checklist in [references/dor-and-templates.md](./references/dor-and-templates.md) and update any missing sections or labels via `gh issue edit <N>`.
 
 2. **Search open and closed issues plus open PRs when no branch issue is known.**
    - Run both queries before drafting anything:
@@ -24,16 +24,16 @@ Every piece of engineering work starts with a GitHub issue. Check whether the ac
      gh issue list --state all --search "<keywords>" --limit 20 --json number,title,state,labels,url
      gh pr list --state open --search "<keywords>" --limit 10 --json number,title,headRefName,url
      ```
-   - **Open issue found.** Fetch it with `gh issue view <number> --comments`. Audit its body and labels against the DoR checklist in [references/dor-and-templates.md](./references/dor-and-templates.md). If required sections or `Dev notes` are missing, update the issue via `gh issue edit <number>`; otherwise report `#<number>` as ready for branching.
-   - **Closed issue found.** Check whether the task is a regression or a partial follow-up (`Refs #<old>`). Create a new issue that cites `#<old>` in `Dev notes` under `Dupes`.
-   - **No issue found.** Proceed to Step 2.
+   - **Open issue found.** Fetch it with `gh issue view <number> --comments`. Audit its body and labels against the DoR checklist in [references/dor-and-templates.md](./references/dor-and-templates.md). If required sections or `Dev notes` are missing, update the issue via `gh issue edit <number>`. Return `#<number>` to mention in the pull request (`Closes #<number>` or `Refs #<number>`).
+   - **Closed issue found.** Check whether the current work is a regression or a partial follow-up (`Refs #<old>`). Create a new issue that cites `#<old>` in `Dev notes` under `Dupes`.
+   - **No issue found.** Proceed to Step 2 to create a new issue for the work.
 
-### 2. Verify codebase facts read-only
+### 2. Verify codebase facts from the active work
 
-Never guess source paths, symbols, or line numbers. Before writing the issue body:
+Never guess source paths, symbols, or line numbers. Before writing a new issue body:
 
-1. Search the codebase (`rg` or `grep`) and read the target files to confirm the exact `path:line`, function or component name, and mechanism.
-2. Check sibling platforms or packages (for example, check `gw-mobile` when filing a `gw-web` bug, or check shared contracts in `gw-contracts` and `gw-ui`).
+1. Inspect the working tree diff (`git status -sb`, `git diff`) or search the codebase (`rg` or `grep`) to confirm the exact `path:line`, function or component name, and mechanism from the work in progress.
+2. Check sibling platforms or packages (for example, check `gw-mobile` when fixing a `gw-web` bug, or check shared contracts in `gw-contracts` and `gw-ui`).
 3. If the repository contains `docs/functional-spec/INDEX.md`, look up the matching area file (`docs/functional-spec/areas/<area>.md`) and highest requirement ID (`<PREFIX>-NNN`) to populate `### FS impact`.
 
 ### 3. Draft the issue body
@@ -77,4 +77,4 @@ When working in a repository that uses default GitHub labels (`bug`, `enhancemen
 - Feature and chore issues include state-complete acceptance criteria covering happy path, error, empty, edge inputs, and platform behavior.
 - `### FS impact` is filled whenever the repository tracks `docs/functional-spec/`.
 - Matching `type:*`, `platform:*`, and `area:*` labels (or repo-equivalent labels) are attached.
-- The resulting issue number `#<N>` is returned so `gh-pr` can create or verify `<type>/issue-<N>-<slug>`.
+- The existing or newly created issue number `#<N>` is returned so `gh-pr` mentions it (`Closes #<N>` or `Refs #<N>`) when creating the pull request.
