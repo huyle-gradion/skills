@@ -2,15 +2,26 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AGENTS_SKILLS_DIR="${HOME}/.agents/skills"
-CLAUDE_SKILLS_DIR="${HOME}/.claude/skills"
 
-mkdir -p "${AGENTS_SKILLS_DIR}" "${CLAUDE_SKILLS_DIR}"
+for script in "${REPO_DIR}"/gh-*/scripts/* "${REPO_DIR}"/scripts/*; do
+  [ -f "${script}" ] && [ ! -x "${script}" ] && chmod +x "${script}" || true
+done
 
-for skill_dir in "${REPO_DIR}"/gh-*; do
-  [ -d "${skill_dir}" ] || continue
-  skill_name="$(basename "${skill_dir}")"
-  ln -sfn "${skill_dir}" "${AGENTS_SKILLS_DIR}/${skill_name}"
-  ln -sfn "../../.agents/skills/${skill_name}" "${CLAUDE_SKILLS_DIR}/${skill_name}"
-  echo "Linked ${skill_name} -> ${AGENTS_SKILLS_DIR}/${skill_name} and ${CLAUDE_SKILLS_DIR}/${skill_name}"
+for target_dir in "${HOME}/.agents/skills" "${HOME}/.claude/skills" "${HOME}/.gemini/config/skills"; do
+  parent_dir="$(dirname "${target_dir}")"
+  if [ -d "${target_dir}" ] && [ -w "${target_dir}" ]; then
+    :
+  elif [ ! -e "${target_dir}" ] && [ -w "${parent_dir}" ]; then
+    mkdir -p "${target_dir}"
+  else
+    echo "Skipping ${target_dir} (not writable in current environment)"
+    continue
+  fi
+
+  for skill_dir in "${REPO_DIR}"/gh-*; do
+    [ -d "${skill_dir}" ] || continue
+    skill_name="$(basename "${skill_dir}")"
+    ln -sfn "${skill_dir}" "${target_dir}/${skill_name}"
+    echo "Linked ${skill_name} -> ${target_dir}/${skill_name}"
+  done
 done

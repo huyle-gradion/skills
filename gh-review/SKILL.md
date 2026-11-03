@@ -17,19 +17,26 @@ Execute the reviewer and merge-coordinator workflow across four stages. Start by
 
 1. **Inspect the PR and its review history in a single call.**
    ```bash
+   # Automated re-review extraction and stage routing:
+   ./gh-review/scripts/find-last-review.sh <pr>
+
+   # Or manual inspection:
    gh pr view <pr> --json number,title,author,baseRefName,headRefName,headRefOid,mergeStateStatus,labels,body,files,commits,reviews,comments
    ```
-   - **Fast-forward to Stage 3 or Stage 4 on re-review.** From the `reviews` array already returned above, inspect the last review that recorded findings, requested changes, or approved (`jq '[.reviews[] | select(.state == "CHANGES_REQUESTED" or .state == "APPROVED" or (.body | test("(^|\n)(- F[0-9]+ · P[123]|Approved\\.)")))][-1] | {state, oid: .commit.oid, body}'`):
+   - **Fast-forward to Stage 3 or Stage 4 on re-review.** From `find-last-review.sh` (or `jq '[.reviews[] | select(.state == "CHANGES_REQUESTED" or .state == "APPROVED" or (.body | test("(^|\n)(- F[0-9]+ · P[123]|Approved\\.)")))][-1] | {state, oid: .commit.oid, body}'`):
      - If that last review has `oid == headRefOid` and is an approval (`state == "APPROVED"` or `body` starts with `Approved.`), jump directly to **Stage 4** (pre-merge `## Coordinator record`).
      - If that last review has a non-empty full 40-character `oid` (`<prev-reviewed-sha>`) that differs from `headRefOid`, jump directly to **Stage 3** to diff `<prev-reviewed-sha>..<headRefOid>`.
-   - **Verify policy compliance on initial review.** Check Conventional Commit title, `Closes #<N>` or `Refs #<N>`, `FS:` line, `area:*` label matching touched directory prefixes, DCO sign-off on commits, and diff size budget.
+   - **Verify policy compliance on initial review.** Check Conventional Commit title, `Closes #<N>` or `Refs #<N>`, `FS:` line, `area:*` label matching touched directory prefixes, DCO sign-off on commits, and diff size budget (`./gh-pr/scripts/diff-budget.sh`).
 
 2. **Coordinate overlapping sibling PR conflicts on initial review.**
    ```bash
+   # Automated conflict detector and merge-order generator:
+   ./gh-review/scripts/check-sibling-conflicts.sh
+
+   # Or manual inspection:
    gh pr list --state open --json number,title,author,files
    ```
-   - Compare the changed file paths of `<pr>` against other open PRs from `gh pr list`.
-   - When two or more open PRs modify overlapping files and will conflict after the first merges, post a top-level comment `@`-mentioning the author using the template in [references/review-and-coordinator-formats.md](./references/review-and-coordinator-formats.md):
+   - When two or more open PRs modify overlapping files and will conflict after the first merges, `check-sibling-conflicts.sh` formats the ready-to-post `@author` merge-order comment (see [references/review-and-coordinator-formats.md](./references/review-and-coordinator-formats.md)):
      - Name each pair of conflicting PRs and the exact overlapping file count and paths.
      - State the explicit merge sequence: `Merge order: #<first>, then #<second>, then #<third>. After each merge, rebase the next PR onto main.`
 
