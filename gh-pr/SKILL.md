@@ -13,9 +13,13 @@ Run the author side of a GitHub pull request by inspecting branch and PR state f
 
 ## Step 0. Detect branch and PR state
 
-Run this single probe before choosing a mode:
+Run the route probe script (or the manual probe commands) before choosing a mode:
 
 ```bash
+# Automated fast path (evaluates branch, PR, reviews, and merge state with minimal context):
+./gh-pr/scripts/pr-route.sh
+
+# Or manual probe commands:
 git status -sb
 git branch --show-current
 gh pr view --json number,state,title,body,labels,baseRefName,headRefName,headRefOid,reviewDecision,reviews,mergeStateStatus,url 2>/dev/null || echo "NO_OPEN_PR"
@@ -34,17 +38,21 @@ Route to one mode based on the probe output and operator intent:
 
 ## Mode 1. Open a new pull request
 
-1. **Confirm the linked issue.**
-   - Extract `#<N>` from the branch name `<type>/issue-<N>-<slug>` if already on a feature branch, and verify it with `gh issue view <N> --json number,title,state`.
-   - If on `main` or no issue number is known, run the [`gh-issue`](../gh-issue/SKILL.md) skill first to find or create a Definition-of-Ready issue.
-   - Choose `Closes #<N>` when this PR completes the issue, or `Refs #<N>` when splitting an `L` or `XL` issue across multiple PRs.
+1. **Resolve the linked issue after working on the change.**
+   - Look for an existing issue first. If already on a `<type>/issue-<N>-<slug>` branch, verify `#<N>` with `gh issue view <N> --json number,title,state`. Otherwise run the [`gh-issue`](../gh-issue/SKILL.md) skill to search open and closed issues for the work in progress.
+   - **Issue exists.** Mention `#<N>` in the pull request (`Closes #<N>` when this PR completes the issue, or `Refs #<N>` when splitting an `L` or `XL` issue across multiple PRs).
+   - **No issue exists.** Create a new Definition-of-Ready issue via [`gh-issue`](../gh-issue/SKILL.md) from the verified code changes, then mention the new `#<N>` in the pull request (`Closes #<N>` or `Refs #<N>`).
 
 2. **Enforce branch, commit, DCO, and diff-size policies.**
-   - **Branch name.** Use `<type>/issue-<number>-<slug>` branched off `origin/main` (for example, `fix/issue-1975-composer-height`).
+   - **Branch name.** Use `<type>/issue-<number>-<slug>` branched off `origin/main` (for example, `fix/issue-1975-composer-height`). If work started on `main` or a temporary branch before `#<N>` was resolved, switch or rename the branch to `<type>/issue-<N>-<slug>` (`git checkout -b <type>/issue-<N>-<slug>` or `git branch -m <type>/issue-<N>-<slug>`) while keeping the working tree intact.
    - **Commits and PR title.** Use Conventional Commits format `type(scope): subject` with an allowed type (`feat`, `fix`, `perf`, `refactor`, `style`, `test`, `docs`, `build`, `ops`, `chore`, `revert`).
    - **DCO sign-off.** Include `Signed-off-by: Name <email>` on every commit (`git commit -s`). If any commit on the branch lacks sign-off, run `git rebase --signoff origin/main`.
    - **Diff size budget.** Keep counted changed lines under the 500-line soft limit and 1000-line hard limit, excluding `*_test.go`, `*.test.{ts,tsx}`, `*.stories.{ts,tsx}`, `e2e/`, `docs/plans/`, generated files, and lockfiles:
      ```bash
+     # Automated check with standard exclusions and verdict:
+     ./gh-pr/scripts/diff-budget.sh
+
+     # Or raw numstat inspection:
      git diff --numstat "$(git merge-base origin/main HEAD)"
      ```
 
@@ -78,7 +86,7 @@ Use this fast path when an open PR already exists on the current branch. Do not 
      git fetch origin
      git status -sb
      git diff --stat HEAD
-     git diff --numstat "$(git merge-base origin/main HEAD)"
+     ./gh-pr/scripts/diff-budget.sh
      ```
    - Verify the cumulative PR diff (including uncommitted changes) still respects the 500-line soft limit and 1000-line hard limit.
 
