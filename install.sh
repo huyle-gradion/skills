@@ -18,8 +18,8 @@ for target_dir in "${HOME}/.agents/skills" "${HOME}/.claude/skills" "${HOME}/.ge
     continue
   fi
 
-  for skill_dir in "${REPO_DIR}"/gh-*; do
-    [ -d "${skill_dir}" ] || continue
+  for skill_md in "${REPO_DIR}"/*/SKILL.md; do
+    skill_dir="$(dirname "${skill_md}")"
     skill_name="$(basename "${skill_dir}")"
     ln -sfn "${skill_dir}" "${target_dir}/${skill_name}"
     echo "Linked ${skill_name} -> ${target_dir}/${skill_name}"

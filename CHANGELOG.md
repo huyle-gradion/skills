@@ -7,6 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `MINOR`: new skills, workflow modes, or helper scripts that preserve backward compatibility.
 - `PATCH`: bug fixes, template refinements, and documentation updates.
 
+## [1.1.0] - 2026-11-13
+
+### Added
+
+- [`factory-spec`](./factory-spec/SKILL.md) skill: co-write an issue a turbo-12f factory can deliver. It reads the factory's `docs/spec-standard.md`, grills the human with `grilling`, runs `adapters/common.py spec-check`, splits stories into native sub-issues with "blocked by" order, and leaves the approval label to the human.
+
+### Changed
+
+- [`install.sh`](./install.sh) links every directory with a `SKILL.md`, not only `gh-*`.
+
 ## [1.0.0] - 2026-11-03
 
 ### Added
