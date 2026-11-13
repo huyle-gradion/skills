@@ -1,6 +1,6 @@
 # Skills
 
-Agent skills for GitHub engineering workflows (`https://github.com/huyle-gradion/skills`), built for Claude Code, Google Antigravity, and compatible coding agents. Current version: [`1.0.0`](./VERSION) ([`CHANGELOG.md`](./CHANGELOG.md)).
+Agent skills for GitHub engineering workflows (`https://github.com/huyle-gradion/skills`), built for Claude Code, Google Antigravity, and compatible coding agents. Current version: [`1.1.0`](./VERSION) ([`CHANGELOG.md`](./CHANGELOG.md)).
 
 ## Included skills
 
@@ -9,6 +9,7 @@ Agent skills for GitHub engineering workflows (`https://github.com/huyle-gradion
 | [`gh-issue`](./gh-issue/SKILL.md) | Issue resolution and Definition of Ready | After starting or completing work, check the active branch or search open and closed issues for an existing match. If found, return `#<N>` to mention in the PR; if not found, create a DoR-compliant issue with verified `Dev notes` and `FS impact`. |
 | [`gh-pr`](./gh-pr/SKILL.md) | Pull request author lifecycle | Detect whether an open PR already exists on the current branch, then route to opening a new PR citing `Closes #<N>` or `Refs #<N>` (Mode 1), committing and pushing incremental updates on the fast path (Mode 2), fixing `F1 · P1` review findings with inline SHA replies (Mode 3), or rebasing in a merge order (Mode 4). |
 | [`gh-review`](./gh-review/SKILL.md) | Code reviewer and merge coordinator | Detect sibling PR conflicts and post `@author` merge order, submit structured inline findings (`Problem`, `How it fails`, `Fix`, `Sibling sites`) with `F1 · P1` index summaries, fast-forward re-reviews to `<prev_sha>..<head_sha>` with revert testing, approve, and post the pre-merge `## Coordinator record`. |
+| [`factory-spec`](./factory-spec/SKILL.md) | Factory-ready issue spec | Before applying the `factory` label for a turbo-12f software factory: grill the human until no decision is open, run the factory's `spec-check`, split a large story into native sub-issues with "blocked by" order, and file live checks as unlabeled follow-ups. |
 
 ## End-to-end workflow
 
